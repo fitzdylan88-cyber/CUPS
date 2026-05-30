@@ -38,6 +38,8 @@ export default function Header() {
     </Link>
   )
 
+  const isHome = pathname === '/'
+
   return (
     <header
       className="sticky top-0 z-50"
@@ -48,24 +50,37 @@ export default function Header() {
         borderBottom: '0.5px solid var(--border-color)',
       }}
     >
-      {/* Mobile: iOS-style compact nav bar */}
-      <div className="md:hidden flex items-center justify-center h-11 px-4 relative">
-        {isCafeDetail && (
-          <Link
-            href="/cafes"
-            className="absolute left-3 flex items-center gap-0.5 text-accent text-[17px] font-normal focus-visible:outline-none"
-            aria-label="Back to Cafes"
-          >
-            <ChevronLeft size={20} strokeWidth={2.5} />
-            Cafes
-          </Link>
+      {/* Mobile nav bar */}
+      <div className="md:hidden flex items-center h-[52px] px-4">
+
+        {/* Left — logo on home, back arrow on detail pages */}
+        {isHome ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={dark ? '/logo-white.svg' : '/logo-dark.svg'} alt="CUPS" className="h-7 w-auto" />
+        ) : (
+          <div className="flex items-center gap-1 flex-1">
+            {isCafeDetail && (
+              <Link
+                href="/cafes"
+                className="flex items-center gap-0.5 text-accent text-[17px] font-normal focus-visible:outline-none"
+                aria-label="Back to Cafes"
+              >
+                <ChevronLeft size={20} strokeWidth={2.5} />
+                Cafes
+              </Link>
+            )}
+          </div>
         )}
 
-        <span className="text-primary font-semibold" style={{ fontSize: '17px' }}>
-          {pageTitle}
-        </span>
+        {/* Centre — page title on non-home pages */}
+        {!isHome && (
+          <span className="absolute left-1/2 -translate-x-1/2 text-primary font-semibold" style={{ fontSize: '17px' }}>
+            {pageTitle}
+          </span>
+        )}
 
-        <div className="absolute right-3 flex items-center gap-2">
+        {/* Right — theme toggle + profile avatar */}
+        <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
             onClick={toggle}
@@ -75,15 +90,18 @@ export default function Header() {
             {dark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
           </button>
 
-          {pathname === '/' && (
-            <Link
-              href={user ? '/profile' : '/signup'}
-              className="text-accent font-normal"
-              style={{ fontSize: '17px' }}
-            >
-              {user ? 'Profile' : 'Sign Up'}
-            </Link>
-          )}
+          <Link
+            href={user ? '/profile' : '/login'}
+            aria-label={user ? 'Profile' : 'Sign in'}
+          >
+            {user ? (
+              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-[13px] select-none">
+                {user.name[0].toUpperCase()}
+              </div>
+            ) : (
+              <span className="text-[15px] text-accent font-medium">Sign in</span>
+            )}
+          </Link>
         </div>
       </div>
 

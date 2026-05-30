@@ -4,8 +4,9 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Maximize2, X, MapPin } from 'lucide-react'
 import Header from '@/components/Header'
-import { useAppStore } from '@/lib/store'
+import { useAppStore, useAuthStore } from '@/lib/store'
 import { mockRatings, mockCafes } from '@/lib/mockData'
 import { useGeolocation } from '@/lib/useGeolocation'
 import { haversineKm, formatDistance } from '@/lib/distance'
@@ -277,6 +278,7 @@ function CafePreviewSheet({ cafe, userLat, userLng, onClose, onNavigate }: {
 
 export default function DiscoverPage() {
   const cafes = useAppStore((s) => s.cafes)
+  const user = useAuthStore((s) => s.user)
   const geo = useGeolocation()
   const router = useRouter()
 
@@ -284,6 +286,7 @@ export default function DiscoverPage() {
   const [filter, setFilter] = useState<'near' | 'top' | 'reviewed'>('near')
   const [mapView, setMapView] = useState<'map' | 'list'>('map')
   const [previewCafe, setPreviewCafe] = useState<Cafe | null>(null)
+  const [mapFullscreen, setMapFullscreen] = useState(false)
 
   useEffect(() => {
     const h = new Date().getHours()
@@ -341,10 +344,15 @@ export default function DiscoverPage() {
 
         {/* Greeting */}
         <div className="px-5 pt-5 pb-3">
-          <h1 className="text-[28px] font-bold text-primary leading-tight">{greeting} ☕</h1>
-          <p className="text-[15px] text-primary-light mt-0.5">
-            {geo.loading ? 'Finding your location…' : geo.error ? 'Dublin, Ireland' : 'Near you in Dublin'}
-          </p>
+          <h1 className="text-[30px] font-bold text-primary leading-tight">
+            {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''} ☕
+          </h1>
+          <div className="flex items-center gap-1 mt-1">
+            <MapPin size={13} className="text-primary-light shrink-0" />
+            <p className="text-[14px] text-primary-light">
+              {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
+            </p>
+          </div>
         </div>
 
         {/* Filter chips + map/list toggle */}
@@ -371,8 +379,16 @@ export default function DiscoverPage() {
         {/* Map (hidden in list mode) */}
         {mapView === 'map' && (
           <div className="px-5 mb-5">
-            <div className="w-full rounded-card overflow-hidden shadow-card" style={{ height: 220 }}>
+            <div className="relative w-full rounded-card overflow-hidden shadow-card" style={{ height: 220 }}>
               {theMap}
+              <button
+                type="button"
+                onClick={() => setMapFullscreen(true)}
+                aria-label="Expand map"
+                className="absolute top-2.5 right-2.5 z-10 bg-white/85 backdrop-blur-sm rounded-full p-2 shadow-card active:opacity-70 transition-opacity"
+              >
+                <Maximize2 size={15} className="text-primary" />
+              </button>
             </div>
           </div>
         )}
@@ -429,10 +445,15 @@ export default function DiscoverPage() {
           style={{ borderLeft: '0.5px solid rgba(0,0,0,0.08)' }}
         >
           <div className="px-7 pt-8 pb-4">
-            <h1 className="text-[32px] font-bold text-primary leading-tight">{greeting} ☕</h1>
-            <p className="text-[15px] text-primary-light mt-1">
-              {geo.loading ? 'Finding your location…' : geo.error ? 'Dublin, Ireland' : 'Near you in Dublin'}
-            </p>
+            <h1 className="text-[32px] font-bold text-primary leading-tight">
+              {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''} ☕
+            </h1>
+            <div className="flex items-center gap-1 mt-1">
+              <MapPin size={13} className="text-primary-light shrink-0" />
+              <p className="text-[15px] text-primary-light">
+                {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
+              </p>
+            </div>
           </div>
 
           {/* Nearby 2-col grid */}
@@ -463,6 +484,36 @@ export default function DiscoverPage() {
           onClose={() => setPreviewCafe(null)}
           onNavigate={(id) => { setPreviewCafe(null); router.push(`/cafe/${id}`) }}
         />
+      )}
+
+      {/* Full-screen map modal */}
+      {mapFullscreen && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-neutral">
+          {/* Top bar */}
+          <div
+            className="flex items-center justify-between px-4 h-[52px] shrink-0"
+            style={{
+              background: 'var(--header-bg)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderBottom: '0.5px solid var(--border-color)',
+            }}
+          >
+            <span className="text-[17px] font-semibold text-primary">Nearby Cafes</span>
+            <button
+              type="button"
+              onClick={() => setMapFullscreen(false)}
+              aria-label="Close map"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-neutral text-primary-light active:opacity-60 transition-opacity"
+            >
+              <X size={20} strokeWidth={2} />
+            </button>
+          </div>
+          {/* Full-height map */}
+          <div className="flex-1 relative">
+            <NearbyLeafletMap cafes={nearbyCafes} userLat={mapLat} userLng={mapLng} />
+          </div>
+        </div>
       )}
     </>
   )
