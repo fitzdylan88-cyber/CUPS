@@ -11,22 +11,27 @@ interface Props {
 
 export default function NearbyLeafletMap({ cafes, userLat, userLng }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<unknown>(null)
+  const mapRef = useRef<import('leaflet').Map | null>(null)
+  const userMarkerRef = useRef<import('leaflet').Marker | null>(null)
+  const cafeLayerRef = useRef<import('leaflet').LayerGroup | null>(null)
+  const LRef = useRef<typeof import('leaflet') | null>(null)
 
+  // One-time map initialisation
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
+    if (!containerRef.current) return
     if ((containerRef.current as unknown as Record<string, unknown>)._leaflet_id) return
 
-    let L: typeof import('leaflet')
-    let map: import('leaflet').Map
+    let ro: ResizeObserver
 
     import('leaflet').then((mod) => {
-      L = mod.default ?? mod
-      if (!containerRef.current || (containerRef.current as unknown as Record<string, unknown>)._leaflet_id) return
+      const L = mod.default ?? mod
+      LRef.current = L
+
+      if (!containerRef.current || mapRef.current) return
 
       delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 
-      map = L.map(containerRef.current!, {
+      const map = L.map(containerRef.current, {
         zoomControl: false,
         attributionControl: false,
       }).setView([userLat, userLng], 15)
@@ -37,50 +42,65 @@ export default function NearbyLeafletMap({ cafes, userLat, userLng }: Props) {
         maxZoom: 19,
       }).addTo(map)
 
-      // User location pulse dot
+      // User location dot
       const userIcon = L.divIcon({
         html: `<div style="width:14px;height:14px;border-radius:50%;background:#007AFF;border:2.5px solid white;box-shadow:0 0 0 5px rgba(0,122,255,0.18)"></div>`,
         className: '',
         iconSize: [14, 14],
         iconAnchor: [7, 7],
       })
-      L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map)
+      userMarkerRef.current = L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map)
 
-      // Score pill markers — clicking calls window.__cupsSelectCafe for preview sheet
-      cafes.forEach((cafe) => {
-        const pill = L.divIcon({
-          html: `<div
-            onclick="window.__cupsSelectCafe&&window.__cupsSelectCafe('${cafe.id}')"
-            style="background:#8B6F47;color:white;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.28);cursor:pointer;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,sans-serif;user-select:none"
-          >☕ ${cafe.rating.toFixed(1)}</div>`,
-          className: '',
-          iconSize: [64, 30],
-          iconAnchor: [32, 15],
-        })
-        L.marker([cafe.latitude, cafe.longitude], { icon: pill }).addTo(map)
-      })
+      // Cafe markers layer group
+      cafeLayerRef.current = L.layerGroup().addTo(map)
 
-      requestAnimationFrame(() => map?.invalidateSize())
-      setTimeout(() => map?.invalidateSize(), 100)
+      requestAnimationFrame(() => map.invalidateSize())
+      setTimeout(() => map.invalidateSize(), 100)
 
-      const ro = new ResizeObserver(() => map?.invalidateSize())
+      ro = new ResizeObserver(() => map.invalidateSize())
       if (containerRef.current) ro.observe(containerRef.current)
-
-      return () => ro.disconnect()
     })
 
     return () => {
-      if (mapRef.current) {
-        (mapRef.current as import('leaflet').Map).remove()
-        mapRef.current = null
-      }
+      ro?.disconnect()
+      mapRef.current?.remove()
+      mapRef.current = null
+      userMarkerRef.current = null
+      cafeLayerRef.current = null
     }
-  }, [cafes, userLat, userLng])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Re-centre + move user dot when location changes
+  useEffect(() => {
+    if (!mapRef.current || !userMarkerRef.current) return
+    mapRef.current.setView([userLat, userLng], mapRef.current.getZoom(), { animate: true })
+    userMarkerRef.current.setLatLng([userLat, userLng])
+  }, [userLat, userLng])
+
+  // Re-draw cafe markers when cafes list changes
+  useEffect(() => {
+    if (!cafeLayerRef.current || !LRef.current) return
+    const L = LRef.current
+    cafeLayerRef.current.clearLayers()
+    cafes.forEach((cafe) => {
+      const pill = L.divIcon({
+        html: `<div
+          onclick="window.__cupsSelectCafe&&window.__cupsSelectCafe('${cafe.id}')"
+          style="background:#8B6F47;color:white;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.28);cursor:pointer;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,sans-serif;user-select:none"
+        >☕ ${cafe.rating.toFixed(1)}</div>`,
+        className: '',
+        iconSize: [64, 30],
+        iconAnchor: [32, 15],
+      })
+      L.marker([cafe.latitude, cafe.longitude], { icon: pill }).addTo(cafeLayerRef.current!)
+    })
+  }, [cafes])
 
   return (
     <>
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      {/* isolation:isolate contains Leaflet's z-indices so modals render above the map */}
+      {/* isolation:isolate keeps Leaflet z-indices below modals */}
       <div style={{ width: '100%', height: '100%', isolation: 'isolate', borderRadius: 'inherit' }}>
         <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       </div>
