@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #F2F2F7;
+  color: #1C1C1E;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS-style invisible scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth momentum scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
+
+/* iOS input appearance reset */
+input, textarea, select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Safe area padding utilities */
+.pb-safe {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
