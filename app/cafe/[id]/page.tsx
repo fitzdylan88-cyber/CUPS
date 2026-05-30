@@ -380,6 +380,7 @@ function ReviewRow({ rating, index, helpful, onHelpful }: {
   }).format(new Date(rating.createdAt))
 
   const userName = 'user' in rating ? (rating as { user: { name: string } }).user.name : 'You'
+  const userAvatar = 'user' in rating ? (rating as { user: { avatar?: string } }).user.avatar : undefined
 
   return (
     <div
@@ -389,6 +390,9 @@ function ReviewRow({ rating, index, helpful, onHelpful }: {
       {rating.photo && rating.photo !== '' ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={rating.photo} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+      ) : userAvatar ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={userAvatar} alt={userName} className="w-9 h-9 rounded-full object-cover shrink-0" />
       ) : (
         <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-accent font-bold text-[15px] shrink-0">
           {userName[0].toUpperCase()}

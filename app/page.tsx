@@ -28,13 +28,13 @@ function CafeDistanceCard({ cafe, userLat, userLng, fullWidth }: {
   return (
     <Link
       href={`/cafe/${cafe.id}`}
-      className={`bg-surface rounded-card shadow-card p-4 flex flex-col gap-2 active:opacity-70 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${fullWidth ? 'w-full' : 'shrink-0 w-44'}`}
+      className={`bg-surface rounded-card shadow-card p-4 flex flex-col active:opacity-70 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${fullWidth ? 'w-full' : 'shrink-0 w-44 h-[188px]'}`}
     >
-      <div className="w-full h-20 rounded-xl bg-accent/10 flex items-center justify-center relative">
+      <div className="w-full h-20 rounded-xl bg-accent/10 flex items-center justify-center relative shrink-0">
         <span className="text-[32px] font-bold text-accent">{cafe.name[0]}</span>
       </div>
-      <p className="text-[15px] font-semibold text-primary leading-tight line-clamp-2">{cafe.name}</p>
-      <div className="flex items-center justify-between">
+      <p className="text-[15px] font-semibold text-primary leading-tight line-clamp-2 mt-2">{cafe.name}</p>
+      <div className="flex items-center justify-between mt-auto">
         <span className="text-[13px] text-primary-light">{formatDistance(dist)}</span>
         <div className="flex items-center gap-0.5">
           <span className="text-[13px] font-bold text-accent tabular-nums">{cafe.rating.toFixed(1)}</span>
@@ -169,9 +169,18 @@ function RecentReviews({ recentRatings }: { recentRatings: typeof mockRatings })
               href={`/cafe/${rating.cafeId}`}
               className="bg-surface rounded-card shadow-card p-4 flex gap-3 active:opacity-70 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center text-accent font-bold text-[16px] shrink-0">
-                {rating.user.name[0]}
-              </div>
+              {(rating.user as { avatar?: string }).avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={(rating.user as { avatar?: string }).avatar}
+                  alt={rating.user.name}
+                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center text-accent font-bold text-[16px] shrink-0">
+                  {rating.user.name[0]}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <span className="text-[15px] font-semibold text-primary">{rating.user.name}</span>

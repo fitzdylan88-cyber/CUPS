@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,16 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // iOS system colors mapped to existing token names
-        'primary':       '#1C1C1E',   // label
-        'primary-light': '#636366',   // secondaryLabel (WCAG AA compliant)
-        'accent':        '#8B6F47',   // brand tint
+        // CSS custom property tokens — swap automatically on .dark
+        'primary':       'var(--color-primary)',
+        'primary-light': 'var(--color-primary-light)',
+        'accent':        '#8B6F47',   // brand stays fixed
         'accent-light':  '#A0826D',
-        'neutral':       '#F2F2F7',   // systemGroupedBackground
-        'neutral-dark':  '#E5E5EA',   // separator (opaque)
-        'surface':       '#FFFFFF',   // secondarySystemGroupedBackground
-        'sep':           '#C6C6C8',   // separator
-        'ios-red':       '#FF3B30',   // destructive
+        'neutral':       'var(--color-neutral)',
+        'neutral-dark':  'var(--color-neutral-dark)',
+        'surface':       'var(--color-surface)',
+        'sep':           'var(--color-sep)',
+        'ios-red':       '#FF3B30',
         'ios-blue':      '#007AFF',
       },
       fontFamily: {

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { Plus, X, Search } from 'lucide-react'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import RatingForm from './RatingForm'
 
@@ -35,29 +36,27 @@ export default function RateFAB() {
       {/* FAB button */}
       <button
         type="button"
-        onClick={() => setStep(user ? 'pick' : 'pick')}
+        onClick={() => setStep('pick')}
         aria-label="Rate an item"
-        className="fixed z-40 md:bottom-6 md:right-6 bottom-[calc(49px+env(safe-area-inset-bottom)+12px)] right-4 w-14 h-14 rounded-full bg-accent text-white shadow-modal flex items-center justify-center active:opacity-70 transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        className="fixed z-40 md:bottom-6 md:right-6 bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] right-4 w-14 h-14 rounded-full bg-accent text-white shadow-modal flex items-center justify-center active:opacity-70 transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
+        <Plus size={28} strokeWidth={2.5} aria-hidden="true" />
       </button>
 
       {/* Cafe picker sheet */}
       {step === 'pick' && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fade-in"
           style={{ background: 'rgba(0,0,0,0.45)' }}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
           role="dialog"
           aria-modal="true"
           aria-label="Choose a cafe to rate"
         >
-          <div className="bg-surface w-full max-w-lg rounded-t-3xl sm:rounded-card pb-safe overflow-hidden flex flex-col max-h-[80dvh]">
+          <div className="bg-surface w-full max-w-lg rounded-t-3xl sm:rounded-card pb-safe overflow-hidden flex flex-col max-h-[80dvh] animate-sheet-in">
             <div className="w-9 h-1 bg-neutral-dark rounded-full mx-auto mt-4 mb-3 sm:hidden" aria-hidden="true" />
 
-            <div className="flex items-center justify-between px-5 pb-3" style={{ borderBottom: '0.5px solid rgba(0,0,0,0.10)' }}>
+            <div className="flex items-center justify-between px-5 pb-3" style={{ borderBottom: '0.5px solid var(--border-color)' }}>
               <h2 className="text-[18px] font-bold text-primary">Choose a cafe</h2>
               <button
                 type="button"
@@ -65,18 +64,14 @@ export default function RateFAB() {
                 aria-label="Close"
                 className="w-11 h-11 flex items-center justify-center rounded-full bg-neutral text-primary-light active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
+                <X size={18} strokeWidth={2} aria-hidden="true" />
               </button>
             </div>
 
-            <div className="px-4 py-3" style={{ borderBottom: '0.5px solid rgba(0,0,0,0.10)' }}>
+            <div className="px-4 py-3" style={{ borderBottom: '0.5px solid var(--border-color)' }}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-light pointer-events-none" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                  </svg>
+                  <Search size={16} strokeWidth={1.8} />
                 </span>
                 <input
                   type="search"
@@ -102,7 +97,7 @@ export default function RateFAB() {
                   type="button"
                   onClick={() => { setSelectedCafeId(cafe.id); setStep('rate') }}
                   className="w-full text-left flex items-center gap-3 px-4 py-3.5 active:bg-neutral transition-colors focus-visible:outline-none focus-visible:bg-neutral"
-                  style={{ borderTop: i > 0 ? '0.5px solid rgba(0,0,0,0.10)' : undefined }}
+                  style={{ borderTop: i > 0 ? '0.5px solid var(--border-color)' : undefined }}
                 >
                   <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                     <span className="text-[16px] font-bold text-accent">{cafe.name[0]}</span>

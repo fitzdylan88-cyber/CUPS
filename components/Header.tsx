@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ChevronLeft, Sun, Moon } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
+import { useTheme } from './ThemeProvider'
 
 const PAGE_TITLES: Record<string, string> = {
   '/':             'CUPS',
@@ -17,6 +19,7 @@ const PAGE_TITLES: Record<string, string> = {
 export default function Header() {
   const pathname = usePathname()
   const user = useAuthStore((state) => state.user)
+  const { dark, toggle } = useTheme()
 
   const isCafeDetail = pathname.startsWith('/cafe/')
   const pageTitle = isCafeDetail ? 'Cafe' : (PAGE_TITLES[pathname] ?? 'CUPS')
@@ -39,10 +42,10 @@ export default function Header() {
     <header
       className="sticky top-0 z-50"
       style={{
-        background: 'rgba(242,242,247,0.85)',
+        background: 'var(--header-bg)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '0.5px solid rgba(0,0,0,0.16)',
+        borderBottom: '0.5px solid var(--border-color)',
       }}
     >
       {/* Mobile: iOS-style compact nav bar */}
@@ -53,9 +56,7 @@ export default function Header() {
             className="absolute left-3 flex items-center gap-0.5 text-accent text-[17px] font-normal focus-visible:outline-none"
             aria-label="Back to Cafes"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-            </svg>
+            <ChevronLeft size={20} strokeWidth={2.5} />
             Cafes
           </Link>
         )}
@@ -64,15 +65,26 @@ export default function Header() {
           {pageTitle}
         </span>
 
-        {pathname === '/' && (
-          <Link
-            href={user ? '/profile' : '/signup'}
-            className="absolute right-4 text-accent font-normal"
-            style={{ fontSize: '17px' }}
+        <div className="absolute right-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-primary-light active:opacity-60 transition-opacity"
           >
-            {user ? 'Profile' : 'Sign Up'}
-          </Link>
-        )}
+            {dark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
+          </button>
+
+          {pathname === '/' && (
+            <Link
+              href={user ? '/profile' : '/signup'}
+              className="text-accent font-normal"
+              style={{ fontSize: '17px' }}
+            >
+              {user ? 'Profile' : 'Sign Up'}
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Desktop: full horizontal nav */}
@@ -83,7 +95,7 @@ export default function Header() {
           aria-label="CUPS — home"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-dark.svg" alt="CUPS" className="h-9 w-auto" />
+          <img src={dark ? '/logo-white.svg' : '/logo-dark.svg'} alt="CUPS" className="h-9 w-auto" />
         </Link>
 
         <nav className="flex gap-5 items-center" role="navigation" aria-label="Main navigation">
@@ -111,6 +123,15 @@ export default function Header() {
               </Link>
             </>
           )}
+
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-primary-light hover:text-primary transition-colors focus-visible:outline-none"
+          >
+            {dark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
+          </button>
         </nav>
       </div>
     </header>

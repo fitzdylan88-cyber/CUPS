@@ -22,12 +22,21 @@ export default function RatingCard({
   return (
     <Card className="mb-4">
       <div className="flex gap-4">
-        <div
-          className="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-lg shrink-0"
-          aria-hidden="true"
-        >
-          {user.name[0].toUpperCase()}
-        </div>
+        {(user as { avatar?: string }).avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={(user as { avatar?: string }).avatar}
+            alt={user.name}
+            className="w-11 h-11 rounded-full object-cover shrink-0"
+          />
+        ) : (
+          <div
+            className="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-lg shrink-0"
+            aria-hidden="true"
+          >
+            {user.name[0].toUpperCase()}
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start mb-1">

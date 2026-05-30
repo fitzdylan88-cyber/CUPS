@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface AuthFormProps {
   mode: 'login' | 'signup'
@@ -16,6 +17,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,8 +46,21 @@ export default function AuthForm({ mode }: AuthFormProps) {
         redirect: false,
       })
 
-      if (result?.error) {
-        setError('Invalid email or password.')
+      if (!result) {
+        setError(
+          mode === 'signup'
+            ? 'Account created! Please sign in with your new credentials.'
+            : 'Sign in failed. Please try again.'
+        )
+        return
+      }
+
+      if (result.error) {
+        setError(
+          mode === 'signup'
+            ? 'Account created! Please sign in with your new credentials.'
+            : 'Invalid email or password.'
+        )
         return
       }
 
@@ -63,7 +78,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
       {/* Logo */}
       <div className="text-center mb-8">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-dark.svg" alt="CUPS" className="h-14 w-auto mx-auto mb-4" />
+        <img src="/logo-dark.svg" alt="CUPS" className="h-14 w-auto mx-auto mb-4 dark:hidden" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-white.svg" alt="CUPS" className="h-14 w-auto mx-auto mb-4 hidden dark:block" />
         <h1 className="text-[28px] font-bold text-primary">
           {mode === 'login' ? 'Welcome back' : 'Create account'}
         </h1>
@@ -76,7 +93,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         {/* Fields grouped iOS-style */}
         <div className="bg-surface rounded-card overflow-hidden mb-4">
           {mode === 'signup' && (
-            <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid rgba(0,0,0,0.10)' }}>
+            <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid var(--border-color)' }}>
               <label htmlFor="name" className="block text-[12px] text-primary-light mb-1">Name</label>
               <input
                 id="name"
@@ -92,7 +109,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           )}
           <div
             className="px-4 py-3.5"
-            style={{ borderBottom: '0.5px solid rgba(0,0,0,0.10)' }}
+            style={{ borderBottom: '0.5px solid var(--border-color)' }}
           >
             <label htmlFor="email" className="block text-[12px] text-primary-light mb-1">Email</label>
             <input
@@ -109,16 +126,26 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </div>
           <div className="px-4 py-3.5">
             <label htmlFor="password" className="block text-[12px] text-primary-light mb-1">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              required
-              className="w-full text-[17px] text-primary bg-transparent border-0 focus:outline-none placeholder:text-primary-light/50"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                required
+                className="w-full text-[17px] text-primary bg-transparent border-0 focus:outline-none placeholder:text-primary-light/50 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-primary-light active:opacity-60 transition-opacity"
+              >
+                {showPassword ? <EyeOff size={18} strokeWidth={1.8} /> : <Eye size={18} strokeWidth={1.8} />}
+              </button>
+            </div>
           </div>
         </div>
 
