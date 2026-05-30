@@ -101,6 +101,44 @@ input, textarea, select {
   animation: fade-in 0.2s ease forwards;
 }
 
+/* ─── Genie / circular reveal from FAB (bottom-right) ───────────────────────── */
+/* FAB sits at roughly right:44px, bottom:112px on mobile */
+
+@keyframes genie-in {
+  from {
+    clip-path: circle(28px at calc(100% - 44px) calc(100% - 112px));
+    opacity: 0.6;
+  }
+  to {
+    clip-path: circle(180% at calc(100% - 44px) calc(100% - 112px));
+    opacity: 1;
+  }
+}
+
+@keyframes genie-out {
+  from {
+    clip-path: circle(180% at calc(100% - 44px) calc(100% - 112px));
+    opacity: 1;
+  }
+  to {
+    clip-path: circle(0px at calc(100% - 44px) calc(100% - 112px));
+    opacity: 0;
+  }
+}
+
+.animate-genie-in {
+  animation: genie-in 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-genie-out {
+  animation: genie-out 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* Safe area top padding */
+.pt-safe-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
