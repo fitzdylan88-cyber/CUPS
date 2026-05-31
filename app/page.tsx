@@ -294,6 +294,8 @@ export default function DiscoverPage() {
   const [mapView, setMapView] = useState<'map' | 'list'>('map')
   const [previewCafe, setPreviewCafe] = useState<Cafe | null>(null)
   const [mapFullscreen, setMapFullscreen] = useState(false)
+  // True once real cafe data has loaded — prevents Dublin mock cafes showing
+  const [cafesReady, setCafesReady] = useState(false)
 
   // Persist map/list toggle preference
   useEffect(() => {
@@ -305,8 +307,8 @@ export default function DiscoverPage() {
   }, [mapView])
 
   // Fetch real nearby cafes when location is available.
-  // If no API key (returns empty), offset mock cafes around the user's real
-  // GPS position so the map, pins, and distances all reflect where they are.
+  // cafesReady stays false until the fetch resolves so the UI shows skeletons
+  // instead of Dublin mock cafes during the GPS + API loading window.
   useEffect(() => {
     if (!geo.lat || !geo.lng) return
     const userLat = geo.lat
@@ -315,7 +317,7 @@ export default function DiscoverPage() {
       if (fetched.length > 0) {
         setCafes(fetched)
       } else {
-        // No API key — re-centre mock cafes around the user's real location
+        // Fallback: offset mock cafes around real GPS position
         const offsetCafes = mockCafes.map((cafe) => ({
           ...cafe,
           latitude:  userLat + (cafe.latitude  - DUBLIN_CENTER.lat),
@@ -323,6 +325,7 @@ export default function DiscoverPage() {
         }))
         setCafes(offsetCafes)
       }
+      setCafesReady(true)
     })
   }, [geo.lat, geo.lng, setCafes])
 
@@ -452,9 +455,16 @@ export default function DiscoverPage() {
         <section className="mb-7" aria-label="Nearby cafes">
           <div className="px-5 flex items-center justify-between mb-3">
             <h2 className="text-[18px] font-bold text-primary">Nearby</h2>
-            <Link href="/cafes" className="text-[15px] text-accent font-medium">See all</Link>
+            {cafesReady && <Link href="/cafes" className="text-[15px] text-accent font-medium">See all</Link>}
           </div>
-          {mapView === 'list' ? (
+          {!cafesReady ? (
+            /* Skeleton cards while GPS + Foursquare load */
+            <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="shrink-0 w-44 h-[188px] bg-surface rounded-card shadow-card animate-pulse" />
+              ))}
+            </div>
+          ) : mapView === 'list' ? (
             <div className="px-5 flex flex-col gap-3">
               {nearbyCafes.map((cafe) => (
                 <CafeDistanceCard key={cafe.id} cafe={cafe} userLat={mapLat} userLng={mapLng} fullWidth />
@@ -528,13 +538,21 @@ export default function DiscoverPage() {
           <section className="px-7 mb-7" aria-label="Nearby cafes">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[18px] font-bold text-primary">Nearby</h2>
-              <Link href="/cafes" className="text-[15px] text-accent font-medium">See all</Link>
+              {cafesReady && <Link href="/cafes" className="text-[15px] text-accent font-medium">See all</Link>}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {nearbyCafes.map((cafe) => (
-                <CafeDistanceCard key={cafe.id} cafe={cafe} userLat={mapLat} userLng={mapLng} fullWidth />
-              ))}
-            </div>
+            {!cafesReady ? (
+              <div className="grid grid-cols-2 gap-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-[188px] bg-surface rounded-card shadow-card animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {nearbyCafes.map((cafe) => (
+                  <CafeDistanceCard key={cafe.id} cafe={cafe} userLat={mapLat} userLng={mapLng} fullWidth />
+                ))}
+              </div>
+            )}
           </section>
 
           <div className="px-7 mb-7"><TrendingSection cafes={cafes} /></div>
