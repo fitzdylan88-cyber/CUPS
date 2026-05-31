@@ -49,9 +49,13 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
-  const lat    = searchParams.get('lat') ?? '53.3498'
-  const lng    = searchParams.get('lng') ?? '-6.2603'
-  const radius = searchParams.get('radius') ?? '1000'
+
+  // Round to 3 decimal places (~111m) so GPS micro-drift doesn't bust the cache
+  const latRaw = parseFloat(searchParams.get('lat') ?? '53.3498')
+  const lngRaw = parseFloat(searchParams.get('lng') ?? '-6.2603')
+  const lat    = latRaw.toFixed(3)
+  const lng    = lngRaw.toFixed(3)
+  const radius = searchParams.get('radius') ?? '3000'
 
   const url = new URL('https://places-api.foursquare.com/places/search')
   url.searchParams.set('ll', `${lat},${lng}`)
@@ -60,13 +64,14 @@ export async function GET(request: NextRequest) {
   url.searchParams.set('limit', '50')
 
   try {
+    // cache: no-store so we always get a live response — avoids serving cached empty results
     const res = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${FSQ_KEY}`,
         'Accept': 'application/json',
         'X-Places-Api-Version': '2025-06-17',
       },
-      next: { revalidate: 300 },
+      cache: 'no-store',
     })
 
     if (!res.ok) {
@@ -78,9 +83,11 @@ export async function GET(request: NextRequest) {
     const data = await res.json()
     const cafes: Cafe[] = (data.results ?? []).map(mapFsqToCafe)
 
+    // Only cache successful non-empty responses for 5 minutes
+    const cacheHeader = cafes.length > 0 ? 'public, s-maxage=300' : 'no-store'
     return NextResponse.json(
       { cafes },
-      { headers: { 'Cache-Control': 'public, s-maxage=300' } }
+      { headers: { 'Cache-Control': cacheHeader } }
     )
   } catch (err) {
     console.error('Foursquare fetch failed:', err)

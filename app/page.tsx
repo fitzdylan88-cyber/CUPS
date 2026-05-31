@@ -309,25 +309,32 @@ export default function DiscoverPage() {
   // Fetch real nearby cafes when location is available.
   // cafesReady stays false until the fetch resolves so the UI shows skeletons
   // instead of Dublin mock cafes during the GPS + API loading window.
+  //
+  // The `cancelled` flag prevents a stale fetch (from a previous GPS update)
+  // from overwriting good results when watchPosition fires multiple times.
   useEffect(() => {
     if (!geo.lat || !geo.lng) return
+    let cancelled = false
     const userLat = geo.lat
     const userLng = geo.lng
     fetchNearbyCafes(userLat, userLng).then((fetched) => {
+      if (cancelled) return
       if (fetched.length > 0) {
         setCafes(fetched)
-      } else {
-        // Fallback: offset mock cafes around real GPS position
+        setCafesReady(true)
+      } else if (!cafesReady) {
+        // Only show fallback if we haven't already loaded real cafes
         const offsetCafes = mockCafes.map((cafe) => ({
           ...cafe,
           latitude:  userLat + (cafe.latitude  - DUBLIN_CENTER.lat),
           longitude: userLng + (cafe.longitude - DUBLIN_CENTER.lng),
         }))
         setCafes(offsetCafes)
+        setCafesReady(true)
       }
-      setCafesReady(true)
     })
-  }, [geo.lat, geo.lng, setCafes])
+    return () => { cancelled = true }
+  }, [geo.lat, geo.lng, setCafes, cafesReady])
 
   useEffect(() => {
     const h = new Date().getHours()
