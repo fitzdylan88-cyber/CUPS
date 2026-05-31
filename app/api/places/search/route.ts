@@ -14,14 +14,14 @@ function buildAddress(tags: Record<string, string | undefined> = {}): string {
   const parts: string[] = []
   const num    = tags['addr:housenumber']
   const street = tags['addr:street']
-  const city   = tags['addr:city']
+  const city   = tags['addr:city'] ?? tags['addr:town'] ?? tags['addr:county']
   if (num && street) parts.push(`${num} ${street}`)
   else if (street)   parts.push(street)
   if (city)          parts.push(city)
   return parts.join(', ') || ''
 }
 
-// Deterministic pseudo-rating from OSM node ID so it looks consistent (7.0–9.8)
+// Deterministic pseudo-rating from OSM node ID (7.0–9.8, always consistent)
 function pseudoRating(id: number): number {
   return Math.round(((id % 28) / 28 * 28 + 70)) / 10
 }
@@ -49,41 +49,51 @@ function mapElementToCafe(el: OverpassElement): Cafe | null {
   }
 }
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const lat    = parseFloat(searchParams.get('lat')    ?? '53.3498')
-  const lng    = parseFloat(searchParams.get('lng')    ?? '-6.2603')
-  const radius = parseInt(  searchParams.get('radius') ?? '2000', 10)
-
-  // Overpass QL — fetch cafe nodes AND ways within radius
+async function fetchOverpass(lat: number, lng: number, radius: number): Promise<OverpassElement[]> {
   const query = `
-[out:json][timeout:15];
+[out:json][timeout:20];
 (
   node["amenity"="cafe"](around:${radius},${lat},${lng});
   way["amenity"="cafe"](around:${radius},${lat},${lng});
+  node["amenity"="coffee_shop"](around:${radius},${lat},${lng});
 );
 out center body;
 `.trim()
 
-  try {
-    const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
-    const res = await fetch(overpassUrl, {
+  const res = await fetch(
+    `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+    {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'CUPS-App/1.0 (cafe-rating-pwa; contact=fitzdylan88@gmail.com)',
       },
       next: { revalidate: 300 },
-    })
+    }
+  )
+  if (!res.ok) throw new Error(`overpass_${res.status}`)
+  const data = await res.json()
+  return data.elements ?? []
+}
 
-    if (!res.ok) {
-      return NextResponse.json({ cafes: [], error: 'overpass_error' }, { status: 200 })
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const lat = parseFloat(searchParams.get('lat') ?? '53.3498')
+  const lng = parseFloat(searchParams.get('lng') ?? '-6.2603')
+
+  try {
+    // Start with 3 km; if fewer than 5 named cafes found, widen to 8 km
+    let elements = await fetchOverpass(lat, lng, 3000)
+    let named = elements.filter(e => e.tags?.name)
+
+    if (named.length < 5) {
+      elements = await fetchOverpass(lat, lng, 8000)
+      named = elements.filter(e => e.tags?.name)
     }
 
-    const data = await res.json()
-    const cafes: Cafe[] = (data.elements ?? [])
+    const cafes: Cafe[] = named
       .map(mapElementToCafe)
-      .filter((c: Cafe | null): c is Cafe => c !== null)
+      .filter((c): c is Cafe => c !== null)
       .slice(0, 40)
 
     return NextResponse.json(
@@ -91,6 +101,6 @@ out center body;
       { headers: { 'Cache-Control': 'public, s-maxage=300' } }
     )
   } catch {
-    return NextResponse.json({ cafes: [], error: 'internal_error' }, { status: 200 })
+    return NextResponse.json({ cafes: [], error: 'overpass_error' }, { status: 200 })
   }
 }
