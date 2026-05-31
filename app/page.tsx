@@ -300,14 +300,26 @@ export default function DiscoverPage() {
     localStorage.setItem('cups-map-view', mapView)
   }, [mapView])
 
-  // Fetch real nearby cafes when location is available
+  // Fetch real nearby cafes when location is available.
+  // If no API key (returns empty), offset mock cafes around the user's real
+  // GPS position so the map, pins, and distances all reflect where they are.
   useEffect(() => {
-    if (geo.lat && geo.lng) {
-      fetchNearbyCafes(geo.lat, geo.lng).then((fetched) => {
-        if (fetched.length > 0) setCafes(fetched)
-        // If empty (no API key), keep mock cafes — no regression
-      })
-    }
+    if (!geo.lat || !geo.lng) return
+    const userLat = geo.lat
+    const userLng = geo.lng
+    fetchNearbyCafes(userLat, userLng).then((fetched) => {
+      if (fetched.length > 0) {
+        setCafes(fetched)
+      } else {
+        // No API key — re-centre mock cafes around the user's real location
+        const offsetCafes = mockCafes.map((cafe) => ({
+          ...cafe,
+          latitude:  userLat + (cafe.latitude  - DUBLIN_CENTER.lat),
+          longitude: userLng + (cafe.longitude - DUBLIN_CENTER.lng),
+        }))
+        setCafes(offsetCafes)
+      }
+    })
   }, [geo.lat, geo.lng, setCafes])
 
   useEffect(() => {
@@ -384,7 +396,7 @@ export default function DiscoverPage() {
               <div className="flex items-center gap-1">
                 <MapPin size={13} className="text-primary-light shrink-0" />
                 <p className="text-[14px] text-primary-light">
-                  {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
+                  {geo.loading ? 'Finding your location…' : 'Near you'}
                 </p>
               </div>
             )}
@@ -498,7 +510,7 @@ export default function DiscoverPage() {
                 <div className="flex items-center gap-1">
                   <MapPin size={14} className="text-primary-light shrink-0" />
                   <p className="text-[15px] text-primary-light">
-                    {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
+                    {geo.loading ? 'Finding your location…' : 'Near you'}
                   </p>
                 </div>
               )}
