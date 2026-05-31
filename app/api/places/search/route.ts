@@ -66,11 +66,14 @@ out center body;
 `.trim()
 
   try {
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body:    `data=${encodeURIComponent(query)}`,
-      next:    { revalidate: 300 },
+    const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
+    const res = await fetch(overpassUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CUPS-App/1.0 (cafe-rating-pwa; contact=fitzdylan88@gmail.com)',
+      },
+      next: { revalidate: 300 },
     })
 
     if (!res.ok) {
