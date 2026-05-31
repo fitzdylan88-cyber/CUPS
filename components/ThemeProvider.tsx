@@ -2,14 +2,18 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
+export type ThemePreference = 'system' | 'light' | 'dark'
+
 interface ThemeContextValue {
   dark: boolean
-  toggle: () => void
+  preference: ThemePreference
+  setPreference: (p: ThemePreference) => void
 }
 
 export const ThemeContext = createContext<ThemeContextValue>({
   dark: false,
-  toggle: () => {},
+  preference: 'system',
+  setPreference: () => {},
 })
 
 export function useTheme() {
@@ -17,26 +21,42 @@ export function useTheme() {
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [dark, setDark] = useState(false)
+  const [preference, setPreferenceState] = useState<ThemePreference>('system')
+  const [systemDark, setSystemDark] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // On mount, read saved preference or system preference
+  // On mount: read saved preference and current system value
   useEffect(() => {
-    const saved = localStorage.getItem('cups-theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    setDark(saved ? saved === 'dark' : prefersDark)
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    setSystemDark(mq.matches)
+
+    const saved = localStorage.getItem('cups-theme') as ThemePreference | null
+    setPreferenceState(saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system')
     setMounted(true)
+
+    // Listen for system theme changes in real-time
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
   }, [])
 
-  // Apply .dark class to <html> whenever dark changes
+  // Persist preference when user changes it
+  const setPreference = (p: ThemePreference) => {
+    setPreferenceState(p)
+    localStorage.setItem('cups-theme', p)
+  }
+
+  // Resolved dark value
+  const dark = preference === 'system' ? systemDark : preference === 'dark'
+
+  // Apply .dark class to <html>
   useEffect(() => {
     if (!mounted) return
     document.documentElement.classList.toggle('dark', dark)
-    localStorage.setItem('cups-theme', dark ? 'dark' : 'light')
   }, [dark, mounted])
 
   return (
-    <ThemeContext.Provider value={{ dark, toggle: () => setDark((d) => !d) }}>
+    <ThemeContext.Provider value={{ dark, preference, setPreference }}>
       {children}
     </ThemeContext.Provider>
   )

@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import Header from '@/components/Header'
 import { useAuthStore, useAppStore } from '@/lib/store'
+import { useTheme } from '@/components/ThemeProvider'
+import type { ThemePreference } from '@/components/ThemeProvider'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -13,6 +15,8 @@ export default function ProfilePage() {
   const setUser = useAuthStore((state) => state.setUser)
   const logout = useAuthStore((state) => state.logout)
   const userRatings = useAppStore((state) => state.userRatings)
+
+  const { preference, setPreference } = useTheme()
 
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState('')
@@ -221,6 +225,41 @@ export default function ProfilePage() {
                   <span className="text-[17px] text-primary">Member since</span>
                   <span className="text-[15px] text-primary-light">{memberSince}</span>
                 </div>
+              </div>
+            </div>
+
+            {/* ── Appearance ── */}
+            <div>
+              <h2 className="text-[13px] font-semibold text-primary-light uppercase tracking-wide mb-2 px-1">Appearance</h2>
+              <div className="bg-surface rounded-card overflow-hidden px-4 py-3.5">
+                <p className="text-[17px] text-primary mb-3">Theme</p>
+                <div className="flex bg-neutral rounded-xl p-1 gap-1">
+                  {([
+                    { value: 'system', label: '⚙️ System' },
+                    { value: 'light',  label: '☀️ Light'  },
+                    { value: 'dark',   label: '🌙 Dark'   },
+                  ] as { value: ThemePreference; label: string }[]).map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPreference(value)}
+                      className={`flex-1 py-2 rounded-lg text-[14px] font-semibold transition-colors ${
+                        preference === value
+                          ? 'bg-surface text-primary shadow-card'
+                          : 'text-primary-light'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[12px] text-primary-light mt-2">
+                  {preference === 'system'
+                    ? 'Follows your device display settings automatically'
+                    : preference === 'dark'
+                    ? 'Always dark, regardless of device settings'
+                    : 'Always light, regardless of device settings'}
+                </p>
               </div>
             </div>
 

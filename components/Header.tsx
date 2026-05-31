@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ChevronLeft, Sun, Moon } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
 import { useTheme } from './ThemeProvider'
 
@@ -22,7 +22,7 @@ export default function Header() {
   const pathname = usePathname()
   const router = useRouter()
   const user = useAuthStore((state) => state.user)
-  const { dark, toggle } = useTheme()
+  const { dark } = useTheme()
 
   const isTopLevel = TOP_LEVEL_PATHS.includes(pathname)
   const pageTitle = PAGE_TITLES[pathname] ?? (pathname.startsWith('/cafe/') ? 'Cafe' : 'CUPS')
@@ -80,17 +80,8 @@ export default function Header() {
           </span>
         )}
 
-        {/* Right — theme toggle + profile avatar */}
+        {/* Right — profile avatar */}
         <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-primary-light active:opacity-60 transition-opacity"
-          >
-            {dark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
-          </button>
-
           <Link
             href={user ? '/profile' : '/login'}
             aria-label={user ? 'Profile' : 'Sign in'}
@@ -143,14 +134,6 @@ export default function Header() {
             </>
           )}
 
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-primary-light hover:text-primary transition-colors focus-visible:outline-none"
-          >
-            {dark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
-          </button>
         </nav>
       </div>
     </header>
