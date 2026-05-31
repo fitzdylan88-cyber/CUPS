@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Plus, X, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import RatingForm from './RatingForm'
 
@@ -139,7 +140,11 @@ export default function RateFAB() {
           cafeName={selectedCafe.name}
           userId={user.id}
           onClose={handleClose}
-          onSave={(rating) => { addRating(rating); handleClose() }}
+          onSave={(rating) => {
+            addRating(rating)
+            handleClose()
+            toast.success('Rating saved! ☕')
+          }}
         />
       )}
     </>

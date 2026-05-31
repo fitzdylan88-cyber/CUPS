@@ -10,7 +10,8 @@ import { useAppStore, useAuthStore } from '@/lib/store'
 import { mockRatings, mockCafes } from '@/lib/mockData'
 import { useGeolocation } from '@/lib/useGeolocation'
 import { haversineKm, formatDistance } from '@/lib/distance'
-import { DUBLIN_CENTER } from '@/lib/places'
+import { DUBLIN_CENTER, fetchNearbyCafes } from '@/lib/places'
+import { useTheme } from '@/components/ThemeProvider'
 import { Cafe } from '@/lib/types'
 
 const NearbyLeafletMap = dynamic(() => import('@/components/discover/NearbyLeafletMap'), {
@@ -278,15 +279,36 @@ function CafePreviewSheet({ cafe, userLat, userLng, onClose, onNavigate }: {
 
 export default function DiscoverPage() {
   const cafes = useAppStore((s) => s.cafes)
+  const setCafes = useAppStore((s) => s.setCafes)
   const user = useAuthStore((s) => s.user)
   const geo = useGeolocation()
   const router = useRouter()
+  const { dark } = useTheme()
 
   const [greeting, setGreeting] = useState('Good morning')
   const [filter, setFilter] = useState<'near' | 'top' | 'reviewed'>('near')
   const [mapView, setMapView] = useState<'map' | 'list'>('map')
   const [previewCafe, setPreviewCafe] = useState<Cafe | null>(null)
   const [mapFullscreen, setMapFullscreen] = useState(false)
+
+  // Persist map/list toggle preference
+  useEffect(() => {
+    const saved = localStorage.getItem('cups-map-view')
+    if (saved === 'list' || saved === 'map') setMapView(saved)
+  }, [])
+  useEffect(() => {
+    localStorage.setItem('cups-map-view', mapView)
+  }, [mapView])
+
+  // Fetch real nearby cafes when location is available
+  useEffect(() => {
+    if (geo.lat && geo.lng) {
+      fetchNearbyCafes(geo.lat, geo.lng).then((fetched) => {
+        if (fetched.length > 0) setCafes(fetched)
+        // If empty (no API key), keep mock cafes — no regression
+      })
+    }
+  }, [geo.lat, geo.lng, setCafes])
 
   useEffect(() => {
     const h = new Date().getHours()
@@ -331,8 +353,9 @@ export default function DiscoverPage() {
     }
   }, [handleCafeSelect, router])
 
+  const mapTheme = dark ? 'dark' : 'light'
   const theMap = !geo.loading
-    ? <NearbyLeafletMap cafes={nearbyCafes} userLat={mapLat} userLng={mapLng} />
+    ? <NearbyLeafletMap cafes={nearbyCafes} userLat={mapLat} userLng={mapLng} theme={mapTheme} />
     : <div className="w-full h-full bg-neutral-dark animate-pulse" aria-label="Loading map…" />
 
   return (
@@ -347,11 +370,24 @@ export default function DiscoverPage() {
           <h1 className="text-[30px] font-bold text-primary leading-tight">
             {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''} ☕
           </h1>
-          <div className="flex items-center gap-1 mt-1">
-            <MapPin size={13} className="text-primary-light shrink-0" />
-            <p className="text-[14px] text-primary-light">
-              {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
-            </p>
+          <div className="mt-1">
+            {geo.error ? (
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-1 text-[14px] text-accent underline underline-offset-2"
+              >
+                <MapPin size={13} className="shrink-0" />
+                Enable location for better results
+              </button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <MapPin size={13} className="text-primary-light shrink-0" />
+                <p className="text-[14px] text-primary-light">
+                  {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -448,11 +484,24 @@ export default function DiscoverPage() {
             <h1 className="text-[32px] font-bold text-primary leading-tight">
               {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''} ☕
             </h1>
-            <div className="flex items-center gap-1 mt-1">
-              <MapPin size={13} className="text-primary-light shrink-0" />
-              <p className="text-[15px] text-primary-light">
-                {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
-              </p>
+            <div className="mt-1">
+              {geo.error ? (
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="flex items-center gap-1 text-[15px] text-accent underline underline-offset-2"
+                >
+                  <MapPin size={14} className="shrink-0" />
+                  Enable location for better results
+                </button>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <MapPin size={14} className="text-primary-light shrink-0" />
+                  <p className="text-[15px] text-primary-light">
+                    {geo.loading ? 'Finding your location…' : 'Dublin, Ireland'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -511,7 +560,7 @@ export default function DiscoverPage() {
           </div>
           {/* Full-height map */}
           <div className="flex-1 relative">
-            <NearbyLeafletMap cafes={nearbyCafes} userLat={mapLat} userLng={mapLng} />
+            <NearbyLeafletMap cafes={nearbyCafes} userLat={mapLat} userLng={mapLng} theme={mapTheme} />
           </div>
         </div>
       )}

@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const [name, setName] = useState('')
   const [bio, setBio] = useState('')
   const [saved, setSaved] = useState(false)
+  const [nameError, setNameError] = useState('')
 
   useEffect(() => {
     if (!user) {
@@ -44,6 +45,11 @@ export default function ProfilePage() {
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
+    if (!name.trim()) {
+      setNameError('Name cannot be empty.')
+      return
+    }
+    setNameError('')
     setUser({ ...user!, name: name.trim(), bio: bio.trim() })
     setEditing(false)
     setSaved(true)
@@ -124,11 +130,12 @@ export default function ProfilePage() {
                       id="profile-name"
                       type="text"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => { setName(e.target.value); setNameError('') }}
                       className="w-full text-[17px] text-primary bg-transparent border-0 focus:outline-none"
                       autoComplete="name"
                       required
                     />
+                    {nameError && <p className="text-[12px] mt-1" style={{ color: '#FF3B30' }}>{nameError}</p>}
                   </div>
                   <div className="px-4 py-3">
                     <label htmlFor="profile-bio" className="block text-[12px] text-primary-light mb-1">Bio (optional)</label>
@@ -151,7 +158,7 @@ export default function ProfilePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setEditing(false); setName(user.name); setBio(user.bio ?? '') }}
+                    onClick={() => { setEditing(false); setName(user.name); setBio(user.bio ?? ''); setNameError('') }}
                     className="bg-neutral-dark text-primary font-semibold py-3 px-5 rounded-full text-[17px] active:opacity-70 transition-opacity"
                   >
                     Cancel

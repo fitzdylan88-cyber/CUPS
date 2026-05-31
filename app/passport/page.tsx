@@ -12,6 +12,8 @@ interface Achievement {
   desc: string
   earned: boolean
   isNew?: boolean
+  target: number
+  progress: number
 }
 
 export default function PassportPage() {
@@ -60,12 +62,12 @@ export default function PassportPage() {
   const memberSince = new Intl.DateTimeFormat('en-IE', { month: 'short', year: 'numeric' }).format(user.createdAt ?? new Date())
 
   const achievements: Achievement[] = [
-    { id: 'first-sip', icon: '☕', label: 'First Sip', desc: 'Rate your first item', earned: totalRatings >= 1, isNew: totalRatings === 1 },
-    { id: 'regular', icon: '🏡', label: 'Regular', desc: 'Visit 3 different cafes', earned: uniqueCafes >= 3 },
-    { id: 'connoisseur', icon: '⭐', label: 'Connoisseur', desc: 'Rate 5 items', earned: totalRatings >= 5 },
-    { id: 'around-dublin', icon: '🗺️', label: 'All Over Dublin', desc: 'Visit 5 cafes', earned: uniqueCafes >= 5 },
-    { id: 'perfect', icon: '🏆', label: 'Perfection', desc: 'Give a 10/10 rating', earned: userRatings.some(r => r.score === 10) },
-    { id: 'critic', icon: '✍️', label: 'Critic', desc: 'Write 3 notes', earned: userRatings.filter(r => r.notes).length >= 3 },
+    { id: 'first-sip',     icon: '☕', label: 'First Sip',       desc: 'Rate your first item',    earned: totalRatings >= 1, isNew: totalRatings === 1, target: 1, progress: Math.min(totalRatings, 1) },
+    { id: 'regular',       icon: '🏡', label: 'Regular',         desc: 'Visit 3 different cafes', earned: uniqueCafes >= 3,  target: 3, progress: Math.min(uniqueCafes, 3) },
+    { id: 'connoisseur',   icon: '⭐', label: 'Connoisseur',     desc: 'Rate 5 items',            earned: totalRatings >= 5, target: 5, progress: Math.min(totalRatings, 5) },
+    { id: 'around-dublin', icon: '🗺️', label: 'All Over Dublin', desc: 'Visit 5 cafes',           earned: uniqueCafes >= 5,  target: 5, progress: Math.min(uniqueCafes, 5) },
+    { id: 'perfect',       icon: '🏆', label: 'Perfection',      desc: 'Give a 10/10 rating',     earned: userRatings.some(r => r.score === 10), target: 1, progress: userRatings.some(r => r.score === 10) ? 1 : 0 },
+    { id: 'critic',        icon: '✍️', label: 'Critic',          desc: 'Write 3 notes',           earned: userRatings.filter(r => r.notes).length >= 3, target: 3, progress: Math.min(userRatings.filter(r => r.notes).length, 3) },
   ]
 
   const earnedCount = achievements.filter(a => a.earned).length
@@ -144,6 +146,11 @@ export default function PassportPage() {
                   </div>
                   <p className="text-[12px] font-bold text-primary leading-tight">{a.label}</p>
                   <p className="text-[10px] text-primary-light leading-snug">{a.desc}</p>
+                  {!a.earned && (
+                    <p className="text-[10px] text-primary-light/60 font-semibold tabular-nums">
+                      {a.progress} / {a.target}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -176,14 +183,12 @@ export default function PassportPage() {
                       {visited ? (
                         <span className="text-[20px] font-bold text-accent">{cafe.name[0].toUpperCase()}</span>
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5 text-primary-light/50">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                        </svg>
+                        <span className="text-[20px] font-bold text-primary-light/30">{cafe.name[0].toUpperCase()}</span>
                       )}
                     </div>
                     <p className="text-[12px] font-semibold text-primary leading-tight line-clamp-2">{cafe.name}</p>
                     <p className="text-[11px] text-primary-light">
-                      {visited ? `${cafeRatingCount} item${cafeRatingCount !== 1 ? 's' : ''}` : 'Not visited'}
+                      {visited ? `${cafeRatingCount} item${cafeRatingCount !== 1 ? 's' : ''}` : 'Not yet stamped'}
                     </p>
                   </Link>
                 )

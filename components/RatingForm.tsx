@@ -128,7 +128,7 @@ export default function RatingForm({ cafeId, cafeName, userId, onClose, onSave }
               aria-valuenow={score} aria-valuemin={1} aria-valuemax={10} aria-valuetext={`${score} out of 10`}
             />
             <div className="flex justify-between text-[11px] text-primary-light mt-1.5 px-0.5">
-              <span>Terrible</span><span>Perfect</span>
+              <span>Terrible</span><span className="text-center">OK</span><span>Perfect</span>
             </div>
           </div>
 

@@ -7,16 +7,21 @@ interface Props {
   cafes: Cafe[]
   userLat: number
   userLng: number
+  theme?: 'light' | 'dark'
 }
 
-export default function NearbyLeafletMap({ cafes, userLat, userLng }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<import('leaflet').Map | null>(null)
-  const userMarkerRef = useRef<import('leaflet').Marker | null>(null)
-  const cafeLayerRef = useRef<import('leaflet').LayerGroup | null>(null)
-  const LRef = useRef<typeof import('leaflet') | null>(null)
+const TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+const TILE_DARK  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 
-  // One-time map initialisation
+export default function NearbyLeafletMap({ cafes, userLat, userLng, theme = 'light' }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef        = useRef<import('leaflet').Map | null>(null)
+  const userMarkerRef = useRef<import('leaflet').Marker | null>(null)
+  const cafeLayerRef  = useRef<import('leaflet').LayerGroup | null>(null)
+  const tileLayerRef  = useRef<import('leaflet').TileLayer | null>(null)
+  const LRef          = useRef<typeof import('leaflet') | null>(null)
+
+  // ── One-time map initialisation ─────────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current) return
     if ((containerRef.current as unknown as Record<string, unknown>)._leaflet_id) return
@@ -38,11 +43,12 @@ export default function NearbyLeafletMap({ cafes, userLat, userLng }: Props) {
 
       mapRef.current = map
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      // Tile layer (respects initial theme)
+      tileLayerRef.current = L.tileLayer(theme === 'dark' ? TILE_DARK : TILE_LIGHT, {
         maxZoom: 19,
       }).addTo(map)
 
-      // User location dot
+      // User location pulse dot
       const userIcon = L.divIcon({
         html: `<div style="width:14px;height:14px;border-radius:50%;background:#007AFF;border:2.5px solid white;box-shadow:0 0 0 5px rgba(0,122,255,0.18)"></div>`,
         className: '',
@@ -67,18 +73,19 @@ export default function NearbyLeafletMap({ cafes, userLat, userLng }: Props) {
       mapRef.current = null
       userMarkerRef.current = null
       cafeLayerRef.current = null
+      tileLayerRef.current = null
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Re-centre + move user dot when location changes
+  // ── Re-centre + move user dot when location changes ─────────────────────────
   useEffect(() => {
     if (!mapRef.current || !userMarkerRef.current) return
     mapRef.current.setView([userLat, userLng], mapRef.current.getZoom(), { animate: true })
     userMarkerRef.current.setLatLng([userLat, userLng])
   }, [userLat, userLng])
 
-  // Re-draw cafe markers when cafes list changes
+  // ── Re-draw cafe markers when cafes list changes ─────────────────────────────
   useEffect(() => {
     if (!cafeLayerRef.current || !LRef.current) return
     const L = LRef.current
@@ -96,6 +103,16 @@ export default function NearbyLeafletMap({ cafes, userLat, userLng }: Props) {
       L.marker([cafe.latitude, cafe.longitude], { icon: pill }).addTo(cafeLayerRef.current!)
     })
   }, [cafes])
+
+  // ── Swap tile layer when theme changes ───────────────────────────────────────
+  useEffect(() => {
+    if (!mapRef.current || !LRef.current || !tileLayerRef.current) return
+    const L = LRef.current
+    tileLayerRef.current.remove()
+    tileLayerRef.current = L.tileLayer(theme === 'dark' ? TILE_DARK : TILE_LIGHT, {
+      maxZoom: 19,
+    }).addTo(mapRef.current)
+  }, [theme])
 
   return (
     <>

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { ChevronLeft, Sun, Moon } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
 import { useTheme } from './ThemeProvider'
@@ -16,13 +16,16 @@ const PAGE_TITLES: Record<string, string> = {
   '/signup':       'Sign Up',
 }
 
+const TOP_LEVEL_PATHS = ['/', '/cafes', '/leaderboards', '/passport', '/profile']
+
 export default function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const user = useAuthStore((state) => state.user)
   const { dark, toggle } = useTheme()
 
-  const isCafeDetail = pathname.startsWith('/cafe/')
-  const pageTitle = isCafeDetail ? 'Cafe' : (PAGE_TITLES[pathname] ?? 'CUPS')
+  const isTopLevel = TOP_LEVEL_PATHS.includes(pathname)
+  const pageTitle = PAGE_TITLES[pathname] ?? (pathname.startsWith('/cafe/') ? 'Cafe' : 'CUPS')
 
   const navLink = (href: string, label: string) => (
     <Link
@@ -39,6 +42,7 @@ export default function Header() {
   )
 
   const isHome = pathname === '/'
+  const showBack = !isHome && !isTopLevel
 
   return (
     <header
@@ -53,26 +57,23 @@ export default function Header() {
       {/* Mobile nav bar */}
       <div className="md:hidden flex items-center h-[52px] px-4">
 
-        {/* Left — logo on home, back arrow on detail pages */}
+        {/* Left — logo on home, back button on all sub-pages */}
         {isHome ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={dark ? '/logo-white.svg' : '/logo-dark.svg'} alt="CUPS" className="h-7 w-auto" />
-        ) : (
-          <div className="flex items-center gap-1 flex-1">
-            {isCafeDetail && (
-              <Link
-                href="/cafes"
-                className="flex items-center gap-0.5 text-accent text-[17px] font-normal focus-visible:outline-none"
-                aria-label="Back to Cafes"
-              >
-                <ChevronLeft size={20} strokeWidth={2.5} />
-                Cafes
-              </Link>
-            )}
-          </div>
-        )}
+        ) : showBack ? (
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-0.5 text-accent text-[17px] font-normal focus-visible:outline-none"
+            aria-label="Go back"
+          >
+            <ChevronLeft size={20} strokeWidth={2.5} />
+            Back
+          </button>
+        ) : null}
 
-        {/* Centre — page title on non-home pages */}
+        {/* Centre — page title on all non-home pages */}
         {!isHome && (
           <span className="absolute left-1/2 -translate-x-1/2 text-primary font-semibold" style={{ fontSize: '17px' }}>
             {pageTitle}

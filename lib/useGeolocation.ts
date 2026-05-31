@@ -20,7 +20,7 @@ export function useGeolocation() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => setState({ lat: pos.coords.latitude, lng: pos.coords.longitude, error: null, loading: false }),
       () => setState({ lat: null, lng: null, error: 'Location access denied', loading: false }),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     )
     return () => navigator.geolocation.clearWatch(watchId)
   }, [])

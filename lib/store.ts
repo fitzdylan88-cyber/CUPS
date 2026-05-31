@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { User, Cafe, Rating } from './types'
 import { mockCafes } from './mockData'
 
@@ -32,18 +33,27 @@ interface AppStore {
   setViewMode: (mode: 'list' | 'map') => void
 }
 
-export const useAppStore = create<AppStore>((set) => ({
-  selectedCity: 'Dublin',
-  setSelectedCity: (city: string) => set({ selectedCity: city }),
-  // Seed with mock cafes so there's zero-latency baseline content
-  cafes: mockCafes,
-  setCafes: (cafes: Cafe[]) => set({ cafes }),
-  userRatings: [],
-  setUserRatings: (ratings: Rating[]) => set({ userRatings: ratings }),
-  addRating: (rating: Rating) =>
-    set((state) => ({ userRatings: [rating, ...state.userRatings] })),
-  isLoadingCafes: false,
-  setIsLoadingCafes: (loading: boolean) => set({ isLoadingCafes: loading }),
-  viewMode: 'list',
-  setViewMode: (mode: 'list' | 'map') => set({ viewMode: mode }),
-}))
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set) => ({
+      selectedCity: 'Dublin',
+      setSelectedCity: (city: string) => set({ selectedCity: city }),
+      // Seed with mock cafes so there's zero-latency baseline content
+      cafes: mockCafes,
+      setCafes: (cafes: Cafe[]) => set({ cafes }),
+      userRatings: [],
+      setUserRatings: (ratings: Rating[]) => set({ userRatings: ratings }),
+      addRating: (rating: Rating) =>
+        set((state) => ({ userRatings: [rating, ...state.userRatings] })),
+      isLoadingCafes: false,
+      setIsLoadingCafes: (loading: boolean) => set({ isLoadingCafes: loading }),
+      viewMode: 'list',
+      setViewMode: (mode: 'list' | 'map') => set({ viewMode: mode }),
+    }),
+    {
+      name: 'cups-app-store',
+      // Only persist user ratings — cafes are always re-seeded from mockData
+      partialize: (state) => ({ userRatings: state.userRatings }),
+    }
+  )
+)
