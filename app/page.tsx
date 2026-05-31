@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Maximize2, X, MapPin } from 'lucide-react'
+import { Maximize2, X, MapPin, Star, MessageCircle, Flame, Map, LayoutList, Coffee, type LucideIcon } from 'lucide-react'
 import Header from '@/components/Header'
 import { useAppStore, useAuthStore } from '@/lib/store'
 import { mockRatings, mockCafes } from '@/lib/mockData'
@@ -54,10 +54,10 @@ function FilterChips({ filter, onChange }: {
   filter: 'near' | 'top' | 'reviewed'
   onChange: (f: 'near' | 'top' | 'reviewed') => void
 }) {
-  const chips: { id: 'near' | 'top' | 'reviewed'; label: string }[] = [
-    { id: 'near', label: '📍 Near me' },
-    { id: 'top', label: '⭐ Top rated' },
-    { id: 'reviewed', label: '💬 Most reviewed' },
+  const chips: { id: 'near' | 'top' | 'reviewed'; label: string; Icon: LucideIcon }[] = [
+    { id: 'near',     label: 'Near me',       Icon: MapPin        },
+    { id: 'top',      label: 'Top rated',     Icon: Star          },
+    { id: 'reviewed', label: 'Most reviewed', Icon: MessageCircle },
   ]
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
@@ -66,12 +66,13 @@ function FilterChips({ filter, onChange }: {
           key={c.id}
           type="button"
           onClick={() => onChange(c.id)}
-          className={`shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-colors ${
+          className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-colors ${
             filter === c.id
               ? 'bg-accent text-white'
               : 'bg-surface text-primary-light shadow-card'
           }`}
         >
+          <c.Icon size={12} />
           {c.label}
         </button>
       ))}
@@ -81,7 +82,10 @@ function FilterChips({ filter, onChange }: {
 
 function TrendingSection({ cafes }: { cafes: Cafe[] }) {
   const trending = cafes.slice().sort((a, b) => b.rating - a.rating).slice(0, 2)
-  const badges = ['🔥 Trending', '⭐ Community fave']
+  const badges = [
+    { Icon: Flame, label: 'Trending'       },
+    { Icon: Star,  label: 'Community fave' },
+  ]
   return (
     <section aria-label="Trending cafes" className="mb-7">
       <h2 className="text-[18px] font-bold text-primary mb-3">Trending</h2>
@@ -96,8 +100,8 @@ function TrendingSection({ cafes }: { cafes: Cafe[] }) {
               className="h-36 flex items-end p-4 relative"
               style={{ background: `linear-gradient(135deg, #D4A574 0%, #8B6F47 100%)` }}
             >
-              <span className="absolute top-3 left-3 bg-white/90 text-[11px] font-bold text-accent px-2.5 py-1 rounded-full">
-                {badges[i]}
+              <span className="absolute top-3 left-3 bg-white/90 text-[11px] font-bold text-accent px-2.5 py-1 rounded-full flex items-center gap-1">
+                {(() => { const B = badges[i]; return <><B.Icon size={10} />{B.label}</> })()}
               </span>
               <span className="text-white/20 font-bold absolute right-4 top-2 text-[64px] leading-none select-none">
                 {cafe.name[0]}
@@ -380,7 +384,7 @@ export default function DiscoverPage() {
         {/* Greeting */}
         <div className="px-5 pt-5 pb-3">
           <h1 className="text-[30px] font-bold text-primary leading-tight">
-            {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''} ☕
+            {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''}
           </h1>
           <div className="mt-1">
             {geo.error ? (
@@ -418,7 +422,10 @@ export default function DiscoverPage() {
                   mapView === v ? 'bg-accent text-white' : 'text-primary-light'
                 }`}
               >
-                {v === 'map' ? '🗺️' : '≡'} {v.charAt(0).toUpperCase() + v.slice(1)}
+                <span className="flex items-center gap-1">
+                  {v === 'map' ? <Map size={13} /> : <LayoutList size={13} />}
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </span>
               </button>
             ))}
           </div>
@@ -494,7 +501,7 @@ export default function DiscoverPage() {
         >
           <div className="px-7 pt-8 pb-4">
             <h1 className="text-[32px] font-bold text-primary leading-tight">
-              {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''} ☕
+              {greeting}{user ? `, ${user.name.split(' ')[0]}` : ''}
             </h1>
             <div className="mt-1">
               {geo.error ? (

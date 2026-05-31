@@ -143,7 +143,7 @@ export default function RateFAB() {
           onSave={(rating) => {
             addRating(rating)
             handleClose()
-            toast.success('Rating saved! ☕')
+            toast.success('Rating saved!')
           }}
         />
       )}

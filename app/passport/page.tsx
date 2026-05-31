@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { Coffee, Home, Star, Map, Trophy, PenLine, Lock, type LucideIcon } from 'lucide-react'
 import Header from '@/components/Header'
 import { useAuthStore, useAppStore } from '@/lib/store'
 import { mockCafes } from '@/lib/mockData'
 
 interface Achievement {
   id: string
-  icon: string
+  icon: LucideIcon
   label: string
   desc: string
   earned: boolean
@@ -62,12 +63,12 @@ export default function PassportPage() {
   const memberSince = new Intl.DateTimeFormat('en-IE', { month: 'short', year: 'numeric' }).format(user.createdAt ?? new Date())
 
   const achievements: Achievement[] = [
-    { id: 'first-sip',     icon: '☕', label: 'First Sip',       desc: 'Rate your first item',    earned: totalRatings >= 1, isNew: totalRatings === 1, target: 1, progress: Math.min(totalRatings, 1) },
-    { id: 'regular',       icon: '🏡', label: 'Regular',         desc: 'Visit 3 different cafes', earned: uniqueCafes >= 3,  target: 3, progress: Math.min(uniqueCafes, 3) },
-    { id: 'connoisseur',   icon: '⭐', label: 'Connoisseur',     desc: 'Rate 5 items',            earned: totalRatings >= 5, target: 5, progress: Math.min(totalRatings, 5) },
-    { id: 'around-dublin', icon: '🗺️', label: 'All Over Dublin', desc: 'Visit 5 cafes',           earned: uniqueCafes >= 5,  target: 5, progress: Math.min(uniqueCafes, 5) },
-    { id: 'perfect',       icon: '🏆', label: 'Perfection',      desc: 'Give a 10/10 rating',     earned: userRatings.some(r => r.score === 10), target: 1, progress: userRatings.some(r => r.score === 10) ? 1 : 0 },
-    { id: 'critic',        icon: '✍️', label: 'Critic',          desc: 'Write 3 notes',           earned: userRatings.filter(r => r.notes).length >= 3, target: 3, progress: Math.min(userRatings.filter(r => r.notes).length, 3) },
+    { id: 'first-sip',     icon: Coffee,  label: 'First Sip',       desc: 'Rate your first item',    earned: totalRatings >= 1, isNew: totalRatings === 1, target: 1, progress: Math.min(totalRatings, 1) },
+    { id: 'regular',       icon: Home,    label: 'Regular',         desc: 'Visit 3 different cafes', earned: uniqueCafes >= 3,  target: 3, progress: Math.min(uniqueCafes, 3) },
+    { id: 'connoisseur',   icon: Star,    label: 'Connoisseur',     desc: 'Rate 5 items',            earned: totalRatings >= 5, target: 5, progress: Math.min(totalRatings, 5) },
+    { id: 'around-dublin', icon: Map,     label: 'All Over Ireland', desc: 'Visit 5 cafes',          earned: uniqueCafes >= 5,  target: 5, progress: Math.min(uniqueCafes, 5) },
+    { id: 'perfect',       icon: Trophy,  label: 'Perfection',      desc: 'Give a 10/10 rating',     earned: userRatings.some(r => r.score === 10), target: 1, progress: userRatings.some(r => r.score === 10) ? 1 : 0 },
+    { id: 'critic',        icon: PenLine, label: 'Critic',          desc: 'Write 3 notes',           earned: userRatings.filter(r => r.notes).length >= 3, target: 3, progress: Math.min(userRatings.filter(r => r.notes).length, 3) },
   ]
 
   const earnedCount = achievements.filter(a => a.earned).length
@@ -94,7 +95,7 @@ export default function PassportPage() {
                   <h2 className="text-[26px] font-bold text-white mt-0.5 leading-tight">{user.name}</h2>
                   <p className="text-[13px] text-white/50 mt-0.5">Member since {memberSince}</p>
                 </div>
-                <span className="text-[52px] opacity-20 select-none leading-none">☕</span>
+                <Coffee size={52} className="opacity-20 select-none" aria-hidden="true" />
               </div>
 
               <div className="grid grid-cols-4 gap-4 mb-5">
@@ -139,10 +140,13 @@ export default function PassportPage() {
                       New!
                     </span>
                   )}
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-[24px] ${
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                     a.earned ? 'bg-accent/15' : 'bg-neutral-dark'
                   }`}>
-                    {a.earned ? a.icon : '🔒'}
+                    {a.earned
+                      ? <a.icon size={24} className="text-accent" aria-hidden="true" />
+                      : <Lock size={20} className="text-primary-light/40" aria-hidden="true" />
+                    }
                   </div>
                   <p className="text-[12px] font-bold text-primary leading-tight">{a.label}</p>
                   <p className="text-[10px] text-primary-light leading-snug">{a.desc}</p>

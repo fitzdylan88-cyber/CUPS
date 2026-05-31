@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import Header from '@/components/Header'
 import { useAuthStore, useAppStore } from '@/lib/store'
+import { BookOpen, Coffee, Pencil, Monitor, Sun, Moon, type LucideIcon } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import type { ThemePreference } from '@/components/ThemeProvider'
 
@@ -181,7 +182,7 @@ export default function ProfilePage() {
                   style={{ borderBottom: '0.5px solid rgba(0,0,0,0.10)' }}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[20px]" aria-hidden="true">📖</span>
+                    <BookOpen size={20} className="text-accent" aria-hidden="true" />
                     <span className="text-[17px] text-primary">My Passport</span>
                   </div>
                   {chevron}
@@ -191,7 +192,7 @@ export default function ProfilePage() {
                   className="flex items-center justify-between px-4 py-3.5 active:opacity-70 transition-opacity"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[20px]" aria-hidden="true">☕</span>
+                    <Coffee size={20} className="text-accent" aria-hidden="true" />
                     <span className="text-[17px] text-primary">Browse cafes</span>
                   </div>
                   {chevron}
@@ -211,7 +212,7 @@ export default function ProfilePage() {
                     style={{ borderBottom: '0.5px solid rgba(0,0,0,0.10)' }}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-[20px]" aria-hidden="true">✏️</span>
+                      <Pencil size={20} className="text-accent" aria-hidden="true" />
                       <span className="text-[17px] text-primary">Edit profile</span>
                     </div>
                     {chevron}
@@ -235,20 +236,21 @@ export default function ProfilePage() {
                 <p className="text-[17px] text-primary mb-3">Theme</p>
                 <div className="flex bg-neutral rounded-xl p-1 gap-1">
                   {([
-                    { value: 'system', label: '⚙️ System' },
-                    { value: 'light',  label: '☀️ Light'  },
-                    { value: 'dark',   label: '🌙 Dark'   },
-                  ] as { value: ThemePreference; label: string }[]).map(({ value, label }) => (
+                    { value: 'system', label: 'System', Icon: Monitor },
+                    { value: 'light',  label: 'Light',  Icon: Sun     },
+                    { value: 'dark',   label: 'Dark',   Icon: Moon    },
+                  ] as { value: ThemePreference; label: string; Icon: LucideIcon }[]).map(({ value, label, Icon }) => (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setPreference(value)}
-                      className={`flex-1 py-2 rounded-lg text-[14px] font-semibold transition-colors ${
+                      className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-lg text-[13px] font-semibold transition-colors ${
                         preference === value
                           ? 'bg-surface text-primary shadow-card'
                           : 'text-primary-light'
                       }`}
                     >
+                      <Icon size={16} aria-hidden="true" />
                       {label}
                     </button>
                   ))}

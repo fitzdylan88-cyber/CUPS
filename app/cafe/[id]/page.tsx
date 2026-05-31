@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { Coffee } from 'lucide-react'
 import { toast } from 'sonner'
 import Header from '@/components/Header'
 import Button from '@/components/Button'
@@ -209,7 +210,7 @@ export default function CafeDetailPage() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={item.photo} alt="" className="w-full h-full object-cover rounded-xl" />
                         ) : (
-                          <span className="text-[28px]">☕</span>
+                          <Coffee size={28} className="text-accent/40" aria-hidden="true" />
                         )}
                       </div>
                       <p className="text-[14px] font-semibold text-primary leading-tight line-clamp-2">{item.itemName}</p>
@@ -364,7 +365,7 @@ export default function CafeDetailPage() {
           onSave={(rating) => {
             addRating(rating)
             setShowRatingForm(false)
-            toast.success('Rating saved! ☕')
+            toast.success('Rating saved!')
           }}
         />
       )}

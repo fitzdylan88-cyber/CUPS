@@ -95,7 +95,7 @@ export default function NearbyLeafletMap({ cafes, userLat, userLng, theme = 'lig
         html: `<div
           onclick="window.__cupsSelectCafe&&window.__cupsSelectCafe('${cafe.id}')"
           style="background:#8B6F47;color:white;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.28);cursor:pointer;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,sans-serif;user-select:none"
-        >☕ ${cafe.rating.toFixed(1)}</div>`,
+>${cafe.rating.toFixed(1)} ★</div>`,
         className: '',
         iconSize: [64, 30],
         iconAnchor: [32, 15],
