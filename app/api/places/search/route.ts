@@ -1,106 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Cafe } from '@/lib/types'
 
-interface OverpassElement {
-  type: string
-  id: number
-  lat?: number
-  lon?: number
-  center?: { lat: number; lon: number }
-  tags?: Record<string, string | undefined>
+const FSQ_KEY = process.env.FOURSQUARE_API_KEY
+
+interface FsqPlace {
+  fsq_place_id: string
+  name: string
+  latitude: number
+  longitude: number
+  location?: {
+    address?: string
+    locality?: string
+    formatted_address?: string
+  }
+  distance?: number   // metres from search point
+  // rating not available on free tier
 }
 
-function buildAddress(tags: Record<string, string | undefined> = {}): string {
-  const parts: string[] = []
-  const num    = tags['addr:housenumber']
-  const street = tags['addr:street']
-  const city   = tags['addr:city'] ?? tags['addr:town'] ?? tags['addr:county']
-  if (num && street) parts.push(`${num} ${street}`)
-  else if (street)   parts.push(street)
-  if (city)          parts.push(city)
-  return parts.join(', ') || ''
+// Deterministic pseudo-rating from place ID characters (7.0–9.8)
+function pseudoRating(id: string): number {
+  const n = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  return Math.round((n % 28) / 28 * 28 + 70) / 10
 }
 
-// Deterministic pseudo-rating from OSM node ID (7.0–9.8, always consistent)
-function pseudoRating(id: number): number {
-  return Math.round(((id % 28) / 28 * 28 + 70)) / 10
-}
-
-function mapElementToCafe(el: OverpassElement): Cafe | null {
-  const lat = el.lat ?? el.center?.lat
-  const lon = el.lon ?? el.center?.lon
-  if (!lat || !lon) return null
-
-  const tags = el.tags ?? {}
-  const name = tags.name
-  if (!name) return null   // skip unnamed nodes
+function mapFsqToCafe(place: FsqPlace): Cafe {
+  const loc = place.location ?? {}
+  const address = loc.formatted_address
+    ?? [loc.address, loc.locality].filter(Boolean).join(', ')
+    ?? ''
 
   return {
-    id: `osm-${el.id}`,
-    placeId: `osm-${el.id}`,
-    name,
-    address: buildAddress(tags),
-    latitude: lat,
-    longitude: lon,
-    rating: pseudoRating(el.id),
+    id: place.fsq_place_id,
+    placeId: place.fsq_place_id,
+    name: place.name,
+    address,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    rating: pseudoRating(place.fsq_place_id),
     reviewCount: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
   }
 }
 
-async function fetchOverpass(lat: number, lng: number, radius: number): Promise<OverpassElement[]> {
-  const query = `
-[out:json][timeout:20];
-(
-  node["amenity"="cafe"](around:${radius},${lat},${lng});
-  way["amenity"="cafe"](around:${radius},${lat},${lng});
-  node["amenity"="coffee_shop"](around:${radius},${lat},${lng});
-);
-out center body;
-`.trim()
-
-  const res = await fetch(
-    `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
-    {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'CUPS-App/1.0 (cafe-rating-pwa; contact=fitzdylan88@gmail.com)',
-      },
-      next: { revalidate: 300 },
-    }
-  )
-  if (!res.ok) throw new Error(`overpass_${res.status}`)
-  const data = await res.json()
-  return data.elements ?? []
-}
-
 export async function GET(request: NextRequest) {
+  if (!FSQ_KEY) {
+    return NextResponse.json({ cafes: [], error: 'not_configured' }, { status: 200 })
+  }
+
   const { searchParams } = new URL(request.url)
-  const lat = parseFloat(searchParams.get('lat') ?? '53.3498')
-  const lng = parseFloat(searchParams.get('lng') ?? '-6.2603')
+  const lat    = searchParams.get('lat') ?? '53.3498'
+  const lng    = searchParams.get('lng') ?? '-6.2603'
+  const radius = searchParams.get('radius') ?? '1000'
+
+  const url = new URL('https://places-api.foursquare.com/places/search')
+  url.searchParams.set('ll', `${lat},${lng}`)
+  url.searchParams.set('radius', radius)
+  url.searchParams.set('query', 'cafe')
+  url.searchParams.set('limit', '50')
 
   try {
-    // Start with 3 km; if fewer than 5 named cafes found, widen to 8 km
-    let elements = await fetchOverpass(lat, lng, 3000)
-    let named = elements.filter(e => e.tags?.name)
+    const res = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${FSQ_KEY}`,
+        'Accept': 'application/json',
+        'X-Places-Api-Version': '2025-06-17',
+      },
+      next: { revalidate: 300 },
+    })
 
-    if (named.length < 5) {
-      elements = await fetchOverpass(lat, lng, 8000)
-      named = elements.filter(e => e.tags?.name)
+    if (!res.ok) {
+      const body = await res.text()
+      console.error('Foursquare error:', res.status, body)
+      return NextResponse.json({ cafes: [], error: 'foursquare_error' }, { status: 200 })
     }
 
-    const cafes: Cafe[] = named
-      .map(mapElementToCafe)
-      .filter((c): c is Cafe => c !== null)
-      .slice(0, 40)
+    const data = await res.json()
+    const cafes: Cafe[] = (data.results ?? []).map(mapFsqToCafe)
 
     return NextResponse.json(
       { cafes },
       { headers: { 'Cache-Control': 'public, s-maxage=300' } }
     )
-  } catch {
-    return NextResponse.json({ cafes: [], error: 'overpass_error' }, { status: 200 })
+  } catch (err) {
+    console.error('Foursquare fetch failed:', err)
+    return NextResponse.json({ cafes: [], error: 'internal_error' }, { status: 200 })
   }
 }
