@@ -4,6 +4,15 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  runtimeCaching: [
+    {
+      // Never cache the places search — always go directly to the network.
+      // This prevents the SW's 24-hour API cache from serving stale
+      // empty responses that were stored before the Foursquare fix.
+      urlPattern: /\/api\/places\/search/,
+      handler: 'NetworkOnly',
+    },
+  ],
 })
 
 const nextConfig = {

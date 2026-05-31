@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -296,6 +296,9 @@ export default function DiscoverPage() {
   const [mapFullscreen, setMapFullscreen] = useState(false)
   // True once real cafe data has loaded — prevents Dublin mock cafes showing
   const [cafesReady, setCafesReady] = useState(false)
+  // Ref mirror of cafesReady so the fetch effect can read the latest value
+  // without cafesReady being a dependency (which would cause extra fetches)
+  const cafesReadyRef = useRef(false)
 
   // Persist map/list toggle preference
   useEffect(() => {
@@ -312,6 +315,9 @@ export default function DiscoverPage() {
   //
   // The `cancelled` flag prevents a stale fetch (from a previous GPS update)
   // from overwriting good results when watchPosition fires multiple times.
+  //
+  // cafesReadyRef (not the state) is used inside the callback so it doesn't
+  // need to be a dependency — avoids an extra fetch on every GPS accuracy update.
   useEffect(() => {
     if (!geo.lat || !geo.lng) return
     let cancelled = false
@@ -321,8 +327,9 @@ export default function DiscoverPage() {
       if (cancelled) return
       if (fetched.length > 0) {
         setCafes(fetched)
+        cafesReadyRef.current = true
         setCafesReady(true)
-      } else if (!cafesReady) {
+      } else if (!cafesReadyRef.current) {
         // Only show fallback if we haven't already loaded real cafes
         const offsetCafes = mockCafes.map((cafe) => ({
           ...cafe,
@@ -330,11 +337,12 @@ export default function DiscoverPage() {
           longitude: userLng + (cafe.longitude - DUBLIN_CENTER.lng),
         }))
         setCafes(offsetCafes)
+        cafesReadyRef.current = true
         setCafesReady(true)
       }
     })
     return () => { cancelled = true }
-  }, [geo.lat, geo.lng, setCafes, cafesReady])
+  }, [geo.lat, geo.lng, setCafes])
 
   useEffect(() => {
     const h = new Date().getHours()
